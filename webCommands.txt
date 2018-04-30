@@ -1,0 +1,7 @@
+%HOMEPATH%\eb-virt\Scripts\activate
+
+python manage.py runserver
+
+python manage.py collectstatic
+
+deactivate

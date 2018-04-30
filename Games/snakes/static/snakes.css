@@ -1,0 +1,9 @@
+p{
+	color:blue;
+}
+
+#canvas{
+    margin: auto;
+	display: block;
+	border:5px solid #000000
+}

@@ -1,1 +1,18 @@
-<h1>1111111</h1>
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="{% static 'snakes.css' %}">
+  <link rel="stylesheet" href="{% static 'main.css' %}">
+  <script type="text/javascript" src="{% static 'snakes_main.js' %}"></script>
+  <script type="text/javascript" src="{% static 'main.js' %}"></script>
+</head>
+<body>
+<h1>This is a heading</h1>
+<p>This is a paragraph.</p>
+
+<canvas id="canvas" width="400" height="705"></canvas>
+
+</body>
+</html>
