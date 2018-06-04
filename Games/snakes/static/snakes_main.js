@@ -10,7 +10,7 @@ function startGame() {
     var globalGameSpeed = 3;
     var canvasOriginY = 0
 
-    var player = { x: canvas.width * .5, y: canvas.height * 0.8, r: gameUnit / 2, num:10 }
+    var player = { x: canvas.width * .499, y: canvas.height * 0.8, r: gameUnit / 2, num:10 }
     var playerSpeed = 10;
     var blockers = new Array();
     var foods = new Array();
@@ -50,19 +50,24 @@ function startGame() {
         ctx.lineWidth = strokeWidth;
         ctx.strokeStyle = strokeColor;
         ctx.stroke();
+        //number
+        ctx.font = "30px Arial";
+        ctx.fillStyle = 'red';
+        ctx.textAlign="center";
+        ctx.fillText(player.num, player.x, player.y+player.r/2);
     }
 
     /////////////obstacles////
     function makeObstacles(){
         blockers = new Array();
-        var blocker1 = { x: canvasWidth * 0.0, y: 0, w: gameUnit * 2, h: gameUnit, num: 10 };
-        var blocker2 = { x: canvasWidth * 0.25, y: 0, w: gameUnit * 2, h: gameUnit, num: 10 };
-        var blocker3 = { x: canvasWidth * 0.50, y: 0, w: gameUnit * 2, h: gameUnit, num: 10 };
-        var blocker4 = { x: canvasWidth * 0.75, y: 0, w: gameUnit * 2, h: gameUnit, num: 10 };
-        blockers.push(blocker1);
-        blockers.push(blocker2);
-        blockers.push(blocker3);
-        blockers.push(blocker4);
+        for (i=0; i<4;i++){
+            var xPos = canvasWidth * (i*.25);
+            var yPos = 0;
+            var width = gameUnit*2;
+            var height = gameUnit;
+            var number = getRndInteger (1,10);
+            blockers.push({x:xPos,y:yPos,w:width,h:height,num:number});
+        }
     }
 
     function moveObstacles(){
@@ -88,19 +93,18 @@ function startGame() {
             //number
             ctx.font = "30px Arial";
             ctx.fillStyle = 'red';
-            ctx.fillText(element.num, element.x + element.w / 3, element.y + element.h * .8);
+            ctx.textAlign="center";
+            ctx.fillText(element.num, element.x+element.w/2, element.y+element.h*.75);
         })
     }
 
     /////////////foods////
     function makeFood(minX = 25, maxX = canvasWidth, minY = canvasOriginY - 100, maxY = canvasOriginY - 600, minNum=1, maxNum=10) {
-        var radius = 20;
+        var radius = gameUnit/4;
         var xPos = getRndInteger(minX, maxX);
-        console.log(minX);
-        console.log(maxX);
-        console.log(xPos);
         var yPos = getRndInteger(minY, maxY);
         var num = getRndInteger(minNum, maxNum);
+        console.log(num);
         var food = {x:xPos,y:yPos,r:radius ,num:num};
         foods.push(food);
     }
@@ -131,7 +135,8 @@ function startGame() {
             //number
             ctx.font = "30px Arial";
             ctx.fillStyle = 'red';
-            ctx.fillText(food.num, food.x + food.w / 3, food.y + food.h * .8);
+            ctx.textAlign="center";
+            ctx.fillText(food.num, food.x, food.y-gameUnit/3);
         })
     }
 
@@ -145,11 +150,12 @@ function startGame() {
     function collisionHandler() {
         //blockers
         for (i = 0; i < blockers.length; i++) {
-            if (isColliding(player, blockers[i])) {
+            if (isCollidingWithBlocker(player, blockers[i])) {
                 scrollingSwitch = false;
                 timeSinceLastCollision += 1;
                 if (timeSinceLastCollision > 10){
                     blockers[i].num -= 1;
+                    player.num -=1;
                     timeSinceLastCollision = 0;
                 }
                 return;
@@ -157,10 +163,16 @@ function startGame() {
             scrollingSwitch = true;
         }
 
-        //fod
+        //fodd
+        for (i = 0; i < foods.length; i++) {
+            if (isCollidingWithFood(player, foods[i])) {
+                player.num += foods[i].num;
+                foods.splice(i,1);
+            }
+        }
     }
 
-    function isColliding(circle, blocker) {
+    function isCollidingWithBlocker(circle, blocker) {
         var distY = (circle.y - circle.r) - (blocker.y + blocker.h);
         var escapeY = -circle.r - blocker.h;
         if (distY <= 0 && distY >= -globalGameSpeed) { // if blocker is coming contact with the circle then check the x distance
@@ -183,6 +195,20 @@ function startGame() {
         }
         return false;
     }
+
+    
+    function isCollidingWithFood(circle, food) {
+        var distY = Math.abs(circle.y - food.y) ;
+        var escapeDistance = circle.r + food.r;
+        if (distY < escapeDistance) { // if blocker is coming contact with the circle then check the x distance
+            distX = Math.abs(circle.x - food.x);
+            if (distX < escapeDistance) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     function getMouseX(event) {
         var rect = canvas.getBoundingClientRect();
