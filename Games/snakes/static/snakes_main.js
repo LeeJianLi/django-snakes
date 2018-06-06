@@ -13,6 +13,7 @@ function startGame() {
     var player = { x: canvas.width * .499, y: canvas.height * 0.8, r: gameUnit / 2, num:10 }
     var playerSpeed = 10;
     var blockers = new Array();
+    var wildBlockers = new Array();
     var foods = new Array();
     
     var strokeWidth = 1;
@@ -21,22 +22,32 @@ function startGame() {
 
     //game loop
     makeObstacles();
+    makeRandomObstacles();
     makeFood();
     window.setInterval(function () {
         ctx.clearRect(0, canvasOriginY, canvas.width, canvas.height);
         if (scrollingSwitch == true) {
             moveObstacles();
             moveFood();
-            if (blockers[i].y > canvasHeight) { // reset blocker
-                makeObstacles();
-                makeFood();
+            for(i=0;i<blockers.length;i++){
+                if (blockers[i].y > canvasHeight) { // reset blocker
+                    makeObstacles();
+                    makeRandomObstacles();
+                    makeFood();
+                }
+            }
+            for(i=0;i<wildBlockers.length;i++){
+                if (wildBlockers[i].y > canvasHeight) { // reset blocker
+                    wildBlockers.splice(i,1);
+                }
             }
         }
 
         player.x = getPlayerX(mouseX, playerSpeed, player.x);
         collisionHandler();
         drawPlayer();
-        drawObstacles(event);
+        drawObstacles(blockers);
+        drawObstacles(wildBlockers);
         drawFoods();
 
     }, gameRefreshRate);
@@ -59,26 +70,57 @@ function startGame() {
 
     /////////////obstacles////
     function makeObstacles(){
-        blockers = new Array();
-        for (i=0; i<4;i++){
+        //generates fixed postion blockers
+        for (i=0; i<4 ;i++){
             var xPos = canvasWidth * (i*.25);
             var yPos = 0;
             var width = gameUnit*2;
             var height = gameUnit;
             var number = getRndInteger (1,10);
-            blockers.push({x:xPos,y:yPos,w:width,h:height,num:number});
+            blockers[i]={x:xPos,y:yPos,w:width,h:height,num:number};
+        }
+        //generates random position blockers at minY = canvasOriginY - 100, maxY = canvasOriginY - 600
+        //rule: pick 2 to 3 rows in Y axis then generates either 1 or 2 blockers
+    }
+
+    function makeRandomObstacles(){
+        var rangeY = canvasHeight - (gameUnit*2);
+        var numberOfPossibleRows = rangeY/gameUnit;
+        var rows = [];
+        while(rows.length < 3){
+            var randomRow = Math.floor(Math.random()*12)+1;
+            if (randomRow%2 == 1){
+                randomRow +=1;
+            }
+            if(rows.indexOf(randomRow)>-1)continue;
+            rows[rows.length] = randomRow;
+        }
+        for(i=0;i<rows.length;i++){
+            if(getRndInteger(0,2)>0){
+                var xPos = canvasWidth * (getRndInteger(0,4)*.25);
+                var yPos = - (rows[i] * gameUnit);
+                var height = gameUnit;
+                var width = gameUnit*2;
+                var number = getRndInteger (1,10);
+                wildBlockers.push({x:xPos,y:yPos,w:width,h:height,num:number});
+            }
         }
     }
+
 
     function moveObstacles(){
         for (i = 0; i<blockers.length; i++){
             blockers[i].y += globalGameSpeed;
 
         }
+        for (i = 0; i<wildBlockers.length; i++){
+            wildBlockers[i].y += globalGameSpeed;
+
+        }
     }
 
-    function drawObstacles() {
-        blockers.forEach(function (element) {
+    function drawObstacles(blockerArray) {
+        blockerArray.forEach(function (element) {
             //shape
             ctx.beginPath();
             if(element.num <= 0){
@@ -104,7 +146,6 @@ function startGame() {
         var xPos = getRndInteger(minX, maxX);
         var yPos = getRndInteger(minY, maxY);
         var num = getRndInteger(minNum, maxNum);
-        console.log(num);
         var food = {x:xPos,y:yPos,r:radius ,num:num};
         foods.push(food);
     }
@@ -140,7 +181,7 @@ function startGame() {
         })
     }
 
-    function getRndInteger(min, max) {
+    function getRndInteger(min, max) {  // min inclusive, max exclusive
         return Math.floor(Math.random() * (max - min) ) + min;
     }
 
@@ -155,6 +196,21 @@ function startGame() {
                 timeSinceLastCollision += 1;
                 if (timeSinceLastCollision > 10){
                     blockers[i].num -= 1;
+                    player.num -=1;
+                    timeSinceLastCollision = 0;
+                }
+                return;
+            }
+            scrollingSwitch = true;
+        }
+
+        //blockers
+        for (i = 0; i < wildBlockers.length; i++) {
+            if (isCollidingWithBlocker(player, wildBlockers[i])) {
+                scrollingSwitch = false;
+                timeSinceLastCollision += 1;
+                if (timeSinceLastCollision > 10){
+                    wildBlockers[i].num -= 1;
                     player.num -=1;
                     timeSinceLastCollision = 0;
                 }
