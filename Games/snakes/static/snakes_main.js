@@ -22,8 +22,7 @@ function startGame() {
 
     //game loop
     makeObstacles();
-    makeRandomObstacles();
-    makeFood();
+    fillEmptyArea(30,2);
     window.setInterval(function () {
         ctx.clearRect(0, canvasOriginY, canvas.width, canvas.height);
         if (scrollingSwitch == true) {
@@ -32,8 +31,7 @@ function startGame() {
             for(i=0;i<blockers.length;i++){
                 if (blockers[i].y > canvasHeight) { // reset blocker
                     makeObstacles();
-                    makeRandomObstacles();
-                    makeFood();
+                    fillEmptyArea(30,2);
                 }
             }
             for(i=0;i<wildBlockers.length;i++){
@@ -63,7 +61,7 @@ function startGame() {
         ctx.stroke();
         //number
         ctx.font = "30px Arial";
-        ctx.fillStyle = 'red';
+        ctx.fillStyle = 'yellow';
         ctx.textAlign="center";
         ctx.fillText(player.num, player.x, player.y+player.r/2);
     }
@@ -79,32 +77,51 @@ function startGame() {
             var number = getRndInteger (1,10);
             blockers[i]={x:xPos,y:yPos,w:width,h:height,num:number};
         }
-        //generates random position blockers at minY = canvasOriginY - 100, maxY = canvasOriginY - 600
-        //rule: pick 2 to 3 rows in Y axis then generates either 1 or 2 blockers
     }
 
-    function makeRandomObstacles(){
-        var rangeY = canvasHeight - (gameUnit*2);
+    function makeRandomObstacles(row,col){
+        var xPos = canvasWidth * ((col-1)*.25);
+        var yPos = - row * gameUnit;
+        var height = gameUnit;
+        var width = gameUnit*2;
+        var number = getRndInteger (1,10);
+        wildBlockers.push({x:xPos,y:yPos,w:width,h:height,num:number});
+    }
+
+    function pickCells(rowNum, colNumber,cellNum){
+        var cells = new Array();
+        var totalCells = rowNum*colNumber;
+        while(cells.length < cellNum){
+            var randomCell = getRndInteger(1,totalCells);
+            if(cells.indexOf(randomCell)>-1)continue;
+            cells[cells.length] = randomCell;
+        }
+
+        var cellCoor = new Array();
+        for (i=0;i<cells.length;i++){
+            var row = Math.ceil(cells[i]/colNumber) ;
+            var col = cells[i]%colNumber + 1;
+            cellCoor.push({row:row,col:col})
+        }
+        return cellCoor;
+    }
+
+    function fillEmptyArea(obstacleNum, FoodNum){
+        var rangeY = canvasHeight - (gameUnit*3);
         var numberOfPossibleRows = rangeY/gameUnit;
-        var rows = [];
-        while(rows.length < 3){
-            var randomRow = Math.floor(Math.random()*12)+1;
-            if (randomRow%2 == 1){
-                randomRow +=1;
-            }
-            if(rows.indexOf(randomRow)>-1)continue;
-            rows[rows.length] = randomRow;
+        var numberOfPossibleCols = canvasWidth/ (gameUnit*2);
+        var totalCellNeeded = obstacleNum+FoodNum;
+        
+        var cells = pickCells(numberOfPossibleRows,numberOfPossibleCols,obstacleNum+FoodNum);
+
+        for (i=0;i<obstacleNum;i++){
+            makeRandomObstacles(cells[i].row+1,cells[i].col);
         }
-        for(i=0;i<rows.length;i++){
-            if(getRndInteger(0,2)>0){
-                var xPos = canvasWidth * (getRndInteger(0,4)*.25);
-                var yPos = - (rows[i] * gameUnit);
-                var height = gameUnit;
-                var width = gameUnit*2;
-                var number = getRndInteger (1,10);
-                wildBlockers.push({x:xPos,y:yPos,w:width,h:height,num:number});
-            }
+        for (i=obstacleNum;i<totalCellNeeded;i++){
+            makeFood(cells[i].row,cells[i].col);
         }
+
+
     }
 
 
@@ -141,10 +158,10 @@ function startGame() {
     }
 
     /////////////foods////
-    function makeFood(minX = 25, maxX = canvasWidth, minY = canvasOriginY - 100, maxY = canvasOriginY - 600, minNum=1, maxNum=10) {
-        var radius = gameUnit/4;
-        var xPos = getRndInteger(minX, maxX);
-        var yPos = getRndInteger(minY, maxY);
+    function makeFood(row,col, minNum=1, maxNum=10) {
+        var radius = gameUnit/3;
+        var xPos = canvasWidth * ((col-1)*.25) + gameUnit;
+        var yPos = - row * gameUnit - gameUnit/2;
         var num = getRndInteger(minNum, maxNum);
         var food = {x:xPos,y:yPos,r:radius ,num:num};
         foods.push(food);
@@ -175,9 +192,9 @@ function startGame() {
             ctx.stroke();
             //number
             ctx.font = "30px Arial";
-            ctx.fillStyle = 'red';
+            ctx.fillStyle = 'yellow';
             ctx.textAlign="center";
-            ctx.fillText(food.num, food.x, food.y-gameUnit/3);
+            ctx.fillText(food.num, food.x, food.y+gameUnit/5);
         })
     }
 
