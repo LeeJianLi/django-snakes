@@ -7,23 +7,27 @@ function startGame() {
     var canvasWidth = canvas.width;
     var gameUnit = 50;
     var gameRefreshRate = 10;
-    var globalGameSpeed = 3;
+    var globalGameSpeed = 4;
     var canvasOriginY = 0
 
-    var player = { x: canvas.width * .499, y: canvas.height * 0.8, r: gameUnit / 2, num:10 }
+    var player = { x: canvas.width * .45, y: canvas.height * 0.8, r: gameUnit / 2, num:10 }
     var playerSpeed = 10;
     var blockers = new Array();
     var wildBlockers = new Array();
     var foods = new Array();
+    var scrollingSwitch = true;
+    
     
     var strokeWidth = 1;
     var strokeColor = 'black';
-    var scrollingSwitch = true;
 
     //game loop
     makeObstacles();
-    fillEmptyArea(30,2);
-    window.setInterval(function () {
+    fillEmptyArea(4,2);
+
+    var currentRound = window.setInterval(gameLoop, gameRefreshRate);
+
+    function gameLoop() {
         ctx.clearRect(0, canvasOriginY, canvas.width, canvas.height);
         if (scrollingSwitch == true) {
             moveObstacles();
@@ -31,7 +35,7 @@ function startGame() {
             for(i=0;i<blockers.length;i++){
                 if (blockers[i].y > canvasHeight) { // reset blocker
                     makeObstacles();
-                    fillEmptyArea(30,2);
+                    fillEmptyArea(4,2);
                 }
             }
             for(i=0;i<wildBlockers.length;i++){
@@ -48,8 +52,51 @@ function startGame() {
         drawObstacles(wildBlockers);
         drawFoods();
 
-    }, gameRefreshRate);
+        if(player.num<=0){
+            clearInterval(currentRound)
 
+            //draw ending box
+            ctx.beginPath();
+            ctx.rect(50, 300, 300, 200);
+            ctx.fillStyle = 'orange';
+            ctx.fill();
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = strokeColor;
+            ctx.stroke();
+            ctx.font = "30px Arial";
+            ctx.fillStyle = 'white';
+            ctx.textAlign="center";
+            ctx.fillText("Better luck next time!",canvasWidth/2, 350, 300, 200);
+            ctx.fillStyle = 'red';
+            ctx.fillText(">>>RESTART<<<",canvasWidth/2, 400, 300, 200);
+
+            //add restart button
+            canvas.addEventListener("mousedown",restartGame);
+            
+
+        }
+
+    }
+    
+    function restartGame(){
+        var rect = canvas.getBoundingClientRect();
+        var mouseX = event.clientX - rect.left;
+        var mouseY = event.clientY - rect.top;
+        if (mouseX>50 && mouseX<350){
+            if(mouseY>350 && mouseY< 420){
+                player = { x: canvas.width * .45, y: canvas.height * 0.8, r: gameUnit / 2, num:10 }
+                playerSpeed = 10;
+                blockers = new Array();
+                wildBlockers = new Array();
+                foods = new Array();
+                scrollingSwitch = true;
+                makeObstacles();
+                fillEmptyArea(4,2);
+
+                currentRound = window.setInterval(gameLoop, gameRefreshRate);
+            }
+        }
+    }
 
     function drawPlayer() {
         ctx.beginPath();
@@ -64,6 +111,7 @@ function startGame() {
         ctx.fillStyle = 'yellow';
         ctx.textAlign="center";
         ctx.fillText(player.num, player.x, player.y+player.r/2);
+        
     }
 
     /////////////obstacles////
@@ -74,7 +122,7 @@ function startGame() {
             var yPos = 0;
             var width = gameUnit*2;
             var height = gameUnit;
-            var number = getRndInteger (1,10);
+            var number = getRndInteger (3,10);
             blockers[i]={x:xPos,y:yPos,w:width,h:height,num:number};
         }
     }
@@ -158,7 +206,7 @@ function startGame() {
     }
 
     /////////////foods////
-    function makeFood(row,col, minNum=1, maxNum=10) {
+    function makeFood(row,col, minNum=1, maxNum=5) {
         var radius = gameUnit/3;
         var xPos = canvasWidth * ((col-1)*.25) + gameUnit;
         var yPos = - row * gameUnit - gameUnit/2;
